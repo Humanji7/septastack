@@ -3,6 +3,9 @@
 ## Project Identity
 SeptaStack is an experimental programming language and execution stack for a **seven-state (septary) computer architecture**. Research prototype, not production software.
 
+## Research Direction
+The strategic goal is to turn SeptaStack into a **parameterized radix research platform** (base-2, base-3, base-7). The research question: "What changes across the full software stack when the target radix changes?" See `memory/research.md` for expert assessment, key references, and experiment design.
+
 ## Quick Commands
 ```bash
 source .venv/bin/activate
@@ -81,3 +84,11 @@ Each stage has its own: `LexerError`, `ParserError`, `SemanticError`, `CodegenEr
 - Don't auto-load image "data" into VM memory (it's debug metadata)
 - Don't add global state or singletons
 - Don't break deterministic compilation (same source = same image)
+- Don't claim base-7 is superior to binary — this is a research comparison tool
+- Don't call it PL theory without formal semantics
+
+## Radix Parameterization (upcoming)
+When implementing Phase 7, all radix-dependent values must come from a single config:
+- `BASE`, `WORD_WIDTH`, `MAX_WORD`, `MEMORY_SIZE`, `BOOL_TRUE`
+- Currently hardcoded in: `common/base7.py`, `vm/alu.py`, `ir/lowering.py`, `codegen/codegen.py`
+- Target: `septa run --base=3 examples/add.septa`
