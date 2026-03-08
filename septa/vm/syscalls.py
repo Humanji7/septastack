@@ -1,6 +1,6 @@
 """VM built-in operations (syscalls).
 
-PRINT  — output value in base-7
+PRINT  — output value in active base
 PRINTD — output value in decimal
 HALT   — stop execution
 
@@ -9,7 +9,7 @@ Output is collected in a list for testability.
 
 from __future__ import annotations
 
-from septa.common.base7 import format_base7
+from septa.common.base7 import format_base_n
 
 
 class Syscalls:
@@ -30,7 +30,7 @@ class Syscalls:
         return self._halted
 
     def print_base7(self, value: int) -> None:
-        self._output.append(format_base7(value))
+        self._output.append(format_base_n(value))
 
     def print_decimal(self, value: int) -> None:
         self._output.append(str(value))

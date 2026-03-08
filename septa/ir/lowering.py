@@ -18,6 +18,7 @@ Public API:
   lower(program) -> IRProgram
 """
 
+from septa.common.config import get_config
 from septa.common.errors import CodegenError
 from septa.ir.ir import Instr, IRFunction, IRGlobal, IRProgram, Op
 from septa.parser.ast import (
@@ -42,8 +43,12 @@ from septa.parser.ast import (
     WhileStmt,
 )
 
-_BOOL_TRUE = 6
-_BOOL_FALSE = 0
+def _bool_true() -> int:
+    return get_config().bool_true
+
+
+def _bool_false() -> int:
+    return get_config().bool_false
 
 _ARITH_OPS = {
     "+": Op.ADD,
@@ -95,7 +100,7 @@ class _Lowering:
         if isinstance(decl.value, NumberLiteral):
             value = decl.value.value
         elif isinstance(decl.value, BoolLiteral):
-            value = _BOOL_TRUE if decl.value.value else _BOOL_FALSE
+            value = _bool_true() if decl.value.value else _bool_false()
         else:
             raise CodegenError(
                 "non-constant global initializer", decl.location
@@ -302,7 +307,7 @@ class _FnContext:
 
     def _lower_bool(self, expr: BoolLiteral) -> str:
         tmp = self._new_temp()
-        value = _BOOL_TRUE if expr.value else _BOOL_FALSE
+        value = _bool_true() if expr.value else _bool_false()
         self._emit(Instr(Op.CONST, dst=tmp, imm=value))
         return tmp
 

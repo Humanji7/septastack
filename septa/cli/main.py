@@ -4,11 +4,39 @@ Commands:
   run      <file.septa>                 — compile and execute
   compile  <file.septa> -o <file.json>  — compile to image (JSON)
   version                               — show version
+
+Options:
+  --base=N   Set radix (default: 7). Supported: 2-10.
 """
 
 import json
 import sys
 from pathlib import Path
+
+
+def _parse_global_opts(argv: list[str]) -> tuple[list[str], int]:
+    """Extract --base=N from argv. Returns (remaining_args, base)."""
+    base = 7
+    remaining = []
+    for arg in argv:
+        if arg.startswith("--base="):
+            try:
+                base = int(arg.split("=", 1)[1])
+            except ValueError:
+                print(f"Error: invalid base: {arg}", file=sys.stderr)
+                sys.exit(1)
+            if base < 2 or base > 10:
+                print(f"Error: base must be 2-10, got {base}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            remaining.append(arg)
+    return remaining, base
+
+
+def _apply_config(base: int) -> None:
+    """Set active radix configuration."""
+    from septa.common.config import RadixConfig, set_config
+    set_config(RadixConfig(base=base, word_width=12))
 
 
 def _read_source(path: str) -> str:
@@ -89,14 +117,22 @@ COMMANDS = {
 }
 
 USAGE = """\
-SeptaStack v0.1 — seven-state programming toolkit
+SeptaStack v0.1 — multi-radix programming toolkit
 
-Usage: septa <command> [args]
+Usage: septa <command> [options] [args]
 
 Commands:
   run      <file.septa>                 Compile and execute
   compile  <file.septa> [-o <file.json>] Compile to image (JSON)
   version                               Show version
+
+Options:
+  --base=N   Set radix (default: 7). Supported: 2-10.
+
+Examples:
+  septa run examples/add.septa              Base-7 (default)
+  septa --base=3 run examples/add.septa     Base-3 (ternary)
+  septa --base=2 run examples/add.septa     Base-2 (binary)
 """
 
 
@@ -105,7 +141,14 @@ def main() -> None:
         print(USAGE)
         sys.exit(0)
 
-    command = sys.argv[1]
+    args, base = _parse_global_opts(sys.argv[1:])
+    _apply_config(base)
+
+    if not args:
+        print(USAGE)
+        sys.exit(0)
+
+    command = args[0]
 
     if command in ("version", "--version", "-v"):
         print("SeptaStack v0.1.0")
@@ -121,7 +164,7 @@ def main() -> None:
         print("Run 'septa --help' for usage.", file=sys.stderr)
         sys.exit(1)
 
-    handler(sys.argv[2:])
+    handler(args[1:])
 
 
 if __name__ == "__main__":

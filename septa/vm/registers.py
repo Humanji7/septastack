@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from septa.common.base7 import MAX_WORD, MEMORY_SIZE
+from septa.common.config import get_config
 
 NUM_REGS = 7  # R0-R6
 
@@ -31,20 +31,24 @@ class Registers:
 
     gp: list[int] = field(default_factory=lambda: [0] * NUM_REGS)
     pc: int = 0
-    sp: int = MEMORY_SIZE - 1
+    sp: int = -1  # sentinel; initialized in __post_init__
     fr: int = 0
+
+    def __post_init__(self) -> None:
+        if self.sp == -1:
+            self.sp = get_config().memory_size - 1
 
     def reset(self, entrypoint: int = 0) -> None:
         self.gp = [0] * NUM_REGS
         self.pc = entrypoint
-        self.sp = MEMORY_SIZE - 1
+        self.sp = get_config().memory_size - 1
         self.fr = 0
 
     def get(self, idx: int) -> int:
         return self.gp[idx]
 
     def set(self, idx: int, value: int) -> None:
-        self.gp[idx] = value % (MAX_WORD + 1)
+        self.gp[idx] = value % get_config().modulus
 
     @property
     def z(self) -> bool:

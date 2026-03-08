@@ -20,6 +20,7 @@ Public API:
 """
 
 from septa.codegen.addresses import AddressMap, allocate
+from septa.common.config import get_config
 from septa.common.errors import CodegenError
 from septa.ir.ir import Instr, IRFunction, IRProgram, Op
 
@@ -209,9 +210,10 @@ class _Codegen:
         self._emit_instr(f"ST {_R4}, [{dst_addr}]")
 
     def _emit_not(self, instr: Instr) -> None:
-        """NOT: dst = (src == 0) ? 6 : 0"""
+        """NOT: dst = (src == 0) ? BOOL_TRUE : 0"""
         src_addr = self._slot_addr(instr.src)
         dst_addr = self._slot_addr(instr.dst)
+        bool_true = get_config().bool_true
         true_label = self._new_cg_label()
         end_label = self._new_cg_label()
         self._emit_instr(f"LD {_R4}, [{src_addr}]")
@@ -221,15 +223,16 @@ class _Codegen:
         self._emit_instr(f"LI {_R4}, 0")
         self._emit_instr(f"JMP {end_label}")
         self._emit_label(true_label)
-        self._emit_instr(f"LI {_R4}, 6")
+        self._emit_instr(f"LI {_R4}, {bool_true}")
         self._emit_label(end_label)
         self._emit_instr(f"ST {_R4}, [{dst_addr}]")
 
     def _emit_cmp(self, instr: Instr) -> None:
-        """Comparison: dst = (src OP src2) ? 6 : 0"""
+        """Comparison: dst = (src OP src2) ? BOOL_TRUE : 0"""
         src_addr = self._slot_addr(instr.src)
         src2_addr = self._slot_addr(instr.src2)
         dst_addr = self._slot_addr(instr.dst)
+        bool_true = get_config().bool_true
         jump_op = _CMP_JUMPS[instr.op]
         true_label = self._new_cg_label()
         end_label = self._new_cg_label()
@@ -240,7 +243,7 @@ class _Codegen:
         self._emit_instr(f"LI {_R4}, 0")
         self._emit_instr(f"JMP {end_label}")
         self._emit_label(true_label)
-        self._emit_instr(f"LI {_R4}, 6")
+        self._emit_instr(f"LI {_R4}, {bool_true}")
         self._emit_label(end_label)
         self._emit_instr(f"ST {_R4}, [{dst_addr}]")
 

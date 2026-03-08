@@ -1,12 +1,13 @@
 """Hand-written lexer for SeptaLang.
 
 Produces a stream of Token objects from source text.
-All numeric literals without prefix are base-7.
+All numeric literals without prefix are in the active radix base.
 Decimal literals use d: prefix (e.g. d:42).
 
-Dependencies: tokens.py, common/errors.py, common/locations.py
+Dependencies: tokens.py, common/errors.py, common/locations.py, common/config.py
 """
 
+from septa.common.config import get_config
 from septa.common.errors import LexerError
 from septa.common.locations import SourceLocation
 from septa.lexer.tokens import KEYWORDS, Token, TokenType
@@ -136,12 +137,13 @@ class Lexer:
         raise LexerError(f"unexpected character: '{ch}'", loc)
 
     def _lex_base7_number(self, loc: SourceLocation) -> Token:
+        cfg = get_config()
         start = self._pos
         while self._current().isdigit():
             digit = self._current()
-            if digit > "6":
+            if digit > cfg.max_digit:
                 raise LexerError(
-                    f"invalid base-7 digit: '{digit}'",
+                    f"invalid base-{cfg.base} digit: '{digit}'",
                     self._loc(),
                 )
             self._advance()

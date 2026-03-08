@@ -5,9 +5,15 @@ machine execution, and end-to-end program execution.
 """
 
 import pytest
-from septa.common.base7 import MAX_WORD, MEMORY_SIZE
+from septa.common.config import get_config
 from septa.common.errors import VMError
-from septa.vm.alu import MODULUS, alu_add, alu_cmp, alu_sub
+from septa.vm.alu import alu_add, alu_cmp, alu_sub
+
+# Convenience: read from active config (default base-7)
+_cfg = get_config()
+MAX_WORD = _cfg.max_word
+MEMORY_SIZE = _cfg.memory_size
+MODULUS = _cfg.modulus
 from septa.vm.instructions import execute
 from septa.vm.machine import Machine
 from septa.vm.memory import Memory

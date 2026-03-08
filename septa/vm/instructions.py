@@ -6,7 +6,7 @@ Each handler updates registers, memory, flags, and PC.
 
 from __future__ import annotations
 
-from septa.common.base7 import MEMORY_SIZE
+from septa.common.config import get_config
 from septa.common.errors import VMError
 from septa.vm.alu import alu_add, alu_cmp, alu_sub
 from septa.vm.memory import Memory
@@ -128,7 +128,7 @@ def _exec_call(instr, regs, mem, sys):
 def _exec_ret(instr, regs, mem, sys):
     """Pop return address from stack, jump to it."""
     regs.sp += 1
-    if regs.sp >= MEMORY_SIZE:
+    if regs.sp >= get_config().memory_size:
         raise VMError("stack underflow")
     regs.pc = mem.load(regs.sp)
 
