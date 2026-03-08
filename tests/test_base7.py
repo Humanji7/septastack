@@ -6,11 +6,14 @@ from septa.common.base7 import (
     MAX_WORD,
     MEMORY_SIZE,
     SEPTITS_PER_WORD,
+    format_balanced,
     format_base7,
+    parse_balanced,
     parse_base7,
     parse_decimal,
     validate_word,
 )
+from septa.common.config import RadixConfig, set_config, reset_config
 
 
 class TestConstants:
@@ -137,3 +140,154 @@ class TestValidateWord:
     def test_overflow(self):
         with pytest.raises(ValueError):
             validate_word(MAX_WORD + 1)
+
+
+# ---- Task 1: Balanced RadixConfig ----
+
+
+class TestBalancedConfig:
+    """Tests for balanced representation in RadixConfig."""
+
+    def test_balanced_default_false(self):
+        cfg = RadixConfig(base=7, word_width=12)
+        assert cfg.balanced is False
+
+    def test_balanced_true_odd_base(self):
+        cfg = RadixConfig(base=7, word_width=12, balanced=True)
+        assert cfg.balanced is True
+        assert cfg.base == 7
+
+    def test_balanced_even_base_raises(self):
+        with pytest.raises(ValueError, match="odd base"):
+            RadixConfig(base=6, word_width=12, balanced=True)
+        with pytest.raises(ValueError, match="odd base"):
+            RadixConfig(base=2, word_width=4, balanced=True)
+
+    def test_word_min_unsigned(self):
+        cfg = RadixConfig(base=7, word_width=2)
+        assert cfg.word_min == 0
+
+    def test_word_min_balanced(self):
+        # base=7, word_width=2, modulus=49, half=24
+        cfg = RadixConfig(base=7, word_width=2, balanced=True)
+        assert cfg.word_min == -24
+
+    def test_word_max_unsigned(self):
+        cfg = RadixConfig(base=7, word_width=2)
+        assert cfg.word_max == 48  # 49 - 1
+
+    def test_word_max_balanced(self):
+        cfg = RadixConfig(base=7, word_width=2, balanced=True)
+        assert cfg.word_max == 24
+
+    def test_bool_true_unsigned_base7(self):
+        cfg = RadixConfig(base=7, word_width=12)
+        assert cfg.bool_true == 6
+
+    def test_bool_true_balanced_base7(self):
+        cfg = RadixConfig(base=7, word_width=12, balanced=True)
+        assert cfg.bool_true == 3  # (7-1)//2
+
+    def test_bool_true_balanced_base3(self):
+        cfg = RadixConfig(base=3, word_width=3, balanced=True)
+        assert cfg.bool_true == 1  # (3-1)//2
+
+    def test_wrap_word_unsigned(self):
+        cfg = RadixConfig(base=7, word_width=2)
+        # modulus = 49
+        assert cfg.wrap_word(0) == 0
+        assert cfg.wrap_word(48) == 48
+        assert cfg.wrap_word(49) == 0
+        assert cfg.wrap_word(50) == 1
+        assert cfg.wrap_word(-1) == 48
+
+    def test_wrap_word_balanced(self):
+        # base=7, word_width=2, modulus=49, half=24, range [-24, 24]
+        cfg = RadixConfig(base=7, word_width=2, balanced=True)
+        assert cfg.wrap_word(0) == 0
+        assert cfg.wrap_word(24) == 24
+        assert cfg.wrap_word(25) == -24
+        assert cfg.wrap_word(-24) == -24
+        assert cfg.wrap_word(-25) == 24
+        assert cfg.wrap_word(1) == 1
+        assert cfg.wrap_word(-1) == -1
+
+    def test_wrap_word_balanced_base3(self):
+        # base=3, word_width=3, modulus=27, half=13, range [-13, 13]
+        cfg = RadixConfig(base=3, word_width=3, balanced=True)
+        assert cfg.wrap_word(0) == 0
+        assert cfg.wrap_word(13) == 13
+        assert cfg.wrap_word(14) == -13
+        assert cfg.wrap_word(-13) == -13
+        assert cfg.wrap_word(-14) == 13
+
+
+# ---- Task 2: Balanced format/parse ----
+
+
+class TestBalancedFormat:
+    """Tests for format_balanced()."""
+
+    def setup_method(self):
+        set_config(RadixConfig(base=7, word_width=12, balanced=True))
+
+    def teardown_method(self):
+        reset_config()
+
+    def test_format_zero(self):
+        assert format_balanced(0) == "0"
+
+    def test_format_small_positive(self):
+        assert format_balanced(3) == "3"
+
+    def test_format_needs_carry(self):
+        # 5 = 1*7 + (-2), so "1B"
+        assert format_balanced(5) == "1B"
+
+    def test_format_negative(self):
+        # -5 = (-1)*7 + 2, so "A2"
+        assert format_balanced(-5) == "A2"
+
+    def test_format_negative_one(self):
+        assert format_balanced(-1) == "A"
+
+    def test_format_seven(self):
+        assert format_balanced(7) == "10"
+
+    def test_format_base3(self):
+        set_config(RadixConfig(base=3, word_width=3, balanced=True))
+        # 5 = 1*9 + (-1)*3 + (-1)*1, so "1TT"
+        assert format_balanced(5) == "1TT"
+
+
+class TestBalancedParse:
+    """Tests for parse_balanced()."""
+
+    def setup_method(self):
+        set_config(RadixConfig(base=7, word_width=12, balanced=True))
+
+    def teardown_method(self):
+        reset_config()
+
+    def test_parse_zero(self):
+        assert parse_balanced("0") == 0
+
+    def test_parse_positive_digit(self):
+        assert parse_balanced("3") == 3
+
+    def test_parse_with_negative_digit(self):
+        # "1B" = 1*7 + (-2) = 5
+        assert parse_balanced("1B") == 5
+
+    def test_parse_negative(self):
+        # "A2" = (-1)*7 + 2 = -5
+        assert parse_balanced("A2") == -5
+
+    def test_parse_base3(self):
+        set_config(RadixConfig(base=3, word_width=3, balanced=True))
+        # "1TT" = 1*9 + (-1)*3 + (-1)*1 = 5
+        assert parse_balanced("1TT") == 5
+
+    def test_roundtrip(self):
+        for val in [0, 1, -1, 3, -3, 5, -5, 7, -7, 24, -24]:
+            assert parse_balanced(format_balanced(val)) == val

@@ -119,3 +119,92 @@ def validate_word(n: int) -> int:
             f"value {n} out of word range [0, {cfg.max_word}]"
         )
     return n
+
+
+# --- Balanced representation ---
+
+# Negative digit chars: A=-1, B=-2, C=-3, D=-4, ...
+# Special: for base-3, T=-1 (Knuth convention)
+
+_NEG_DIGITS = "ABCDEFGHIJ"  # A=-1, B=-2, ..., up to base-21
+
+
+def _digit_to_char(d: int, base: int) -> str:
+    """Convert a balanced digit value to its character representation."""
+    if d >= 0:
+        return str(d)
+    # Negative digit
+    neg_idx = (-d) - 1  # A=-1 -> idx 0, B=-2 -> idx 1, ...
+    if base == 3 and d == -1:
+        return "T"  # Knuth convention for balanced ternary
+    return _NEG_DIGITS[neg_idx]
+
+
+def _char_to_digit(ch: str, base: int) -> int:
+    """Convert a balanced digit character to its integer value."""
+    if ch.isdigit():
+        d = int(ch)
+        half = (base - 1) // 2
+        if d > half:
+            raise ValueError(f"invalid balanced base-{base} digit: '{ch}'")
+        return d
+    if base == 3 and ch == "T":
+        return -1
+    idx = _NEG_DIGITS.find(ch)
+    if idx < 0:
+        raise ValueError(f"invalid balanced base-{base} digit: '{ch}'")
+    return -(idx + 1)
+
+
+def format_balanced(n: int) -> str:
+    """Format an integer in balanced base-N notation.
+
+    Uses current active config (must have balanced=True).
+    Positive digits: 0..half. Negative digits: A=-1, B=-2, etc.
+    Base-3 uses T=-1 (Knuth convention).
+    """
+    cfg = get_config()
+    if n == 0:
+        return "0"
+
+    half = (cfg.base - 1) // 2
+    negative = n < 0
+    value = abs(n)
+
+    digits: list[int] = []
+    while value > 0:
+        rem = value % cfg.base
+        if rem > half:
+            rem -= cfg.base  # carry: rem becomes negative, value increases
+            value = (value - rem) // cfg.base
+        else:
+            value //= cfg.base
+        digits.append(rem)
+
+    if negative:
+        digits = [-d for d in digits]
+
+    return "".join(_digit_to_char(d, cfg.base) for d in reversed(digits))
+
+
+def parse_balanced(s: str) -> int:
+    """Parse a balanced base-N string to a Python int.
+
+    Uses current active config (must have balanced=True).
+    Validates result within [word_min, word_max].
+    """
+    cfg = get_config()
+    if not s:
+        raise ValueError(f"empty balanced base-{cfg.base} literal")
+
+    result = 0
+    for ch in s:
+        d = _char_to_digit(ch, cfg.base)
+        result = result * cfg.base + d
+
+    if result < cfg.word_min or result > cfg.word_max:
+        raise ValueError(
+            f"balanced base-{cfg.base} literal '{s}' out of range "
+            f"[{cfg.word_min}, {cfg.word_max}]"
+        )
+    return result
