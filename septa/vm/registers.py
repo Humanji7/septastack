@@ -48,7 +48,7 @@ class Registers:
         return self.gp[idx]
 
     def set(self, idx: int, value: int) -> None:
-        self.gp[idx] = value % get_config().modulus
+        self.gp[idx] = get_config().wrap_word(value)
 
     @property
     def z(self) -> bool:

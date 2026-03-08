@@ -1113,3 +1113,114 @@ class TestVMExamples:
         }
         """)
         assert output == ["300"]
+
+
+# ================================================================
+# Balanced mode: ALU
+# ================================================================
+
+from septa.common.config import RadixConfig, set_config, reset_config
+
+
+class TestBalancedALU:
+    """ALU tests with balanced base-7, word_width=2 (range [-24, 24])."""
+
+    def setup_method(self):
+        set_config(RadixConfig(base=7, word_width=2, balanced=True))
+
+    def teardown_method(self):
+        reset_config()
+
+    def test_add_positive(self):
+        result, is_zero = alu_add(3, 4)
+        assert result == 7
+        assert is_zero is False
+
+    def test_add_wrap_positive(self):
+        result, is_zero = alu_add(20, 20)
+        assert result == -9
+        assert is_zero is False
+
+    def test_sub_negative_result(self):
+        result, is_zero = alu_sub(3, 5)
+        assert result == -2
+        assert is_zero is False
+
+    def test_sub_wrap_negative(self):
+        result, is_zero = alu_sub(-20, 20)
+        assert result == 9
+        assert is_zero is False
+
+    def test_add_zero(self):
+        result, is_zero = alu_add(5, -5)
+        assert result == 0
+        assert is_zero is True
+
+    def test_cmp_signed(self):
+        z, g, l = alu_cmp(-2, 5)
+        assert z is False
+        assert g is False
+        assert l is True
+
+
+# ================================================================
+# Balanced mode: Registers + Memory
+# ================================================================
+
+class TestBalancedRegistersAndMemory:
+    """Registers/Memory tests with balanced base-7, word_width=2."""
+
+    def setup_method(self):
+        set_config(RadixConfig(base=7, word_width=2, balanced=True))
+
+    def teardown_method(self):
+        reset_config()
+
+    def test_register_stores_negative(self):
+        regs = Registers()
+        regs.set(0, -5)
+        assert regs.get(0) == -5
+
+    def test_register_wraps_balanced(self):
+        regs = Registers()
+        regs.set(0, 25)
+        assert regs.get(0) == -24
+
+    def test_memory_stores_negative(self):
+        mem = Memory()
+        mem.store(0, -5)
+        assert mem.load(0) == -5
+
+    def test_memory_wraps_balanced(self):
+        mem = Memory()
+        mem.store(0, 25)
+        assert mem.load(0) == -24
+
+
+# ================================================================
+# Balanced mode: Syscalls
+# ================================================================
+
+class TestBalancedSyscalls:
+    """Syscall tests with balanced base-7, word_width=12."""
+
+    def setup_method(self):
+        set_config(RadixConfig(base=7, word_width=12, balanced=True))
+
+    def teardown_method(self):
+        reset_config()
+
+    def test_print_balanced_format(self):
+        sys_ = Syscalls()
+        sys_.print_base7(5)
+        assert sys_.output == ["1B"]
+
+    def test_printd_unchanged(self):
+        sys_ = Syscalls()
+        sys_.print_decimal(5)
+        assert sys_.output == ["5"]
+
+    def test_print_negative_balanced(self):
+        sys_ = Syscalls()
+        sys_.print_base7(-5)
+        assert sys_.output == ["A2"]

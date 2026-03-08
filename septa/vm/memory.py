@@ -32,7 +32,7 @@ class Memory:
     def store(self, addr: int, value: int) -> None:
         if addr < 0 or addr >= len(self._data):
             raise VMError(f"memory write out of bounds: {addr}")
-        self._data[addr] = value % get_config().modulus
+        self._data[addr] = get_config().wrap_word(value)
 
     def reset(self) -> None:
         self._data = [0] * get_config().memory_size

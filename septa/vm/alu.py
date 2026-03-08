@@ -14,15 +14,13 @@ from septa.common.config import get_config
 
 def alu_add(a: int, b: int) -> tuple[int, bool]:
     """Add two words. Returns (result, is_zero)."""
-    modulus = get_config().modulus
-    result = (a + b) % modulus
+    result = get_config().wrap_word(a + b)
     return result, result == 0
 
 
 def alu_sub(a: int, b: int) -> tuple[int, bool]:
     """Subtract b from a. Returns (result, is_zero)."""
-    modulus = get_config().modulus
-    result = (a - b) % modulus
+    result = get_config().wrap_word(a - b)
     return result, result == 0
 
 

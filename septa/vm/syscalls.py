@@ -10,6 +10,7 @@ Output is collected in a list for testability.
 from __future__ import annotations
 
 from septa.common.base7 import format_base_n
+from septa.common.config import get_config
 
 
 class Syscalls:
@@ -30,7 +31,11 @@ class Syscalls:
         return self._halted
 
     def print_base7(self, value: int) -> None:
-        self._output.append(format_base_n(value))
+        if get_config().balanced:
+            from septa.common.base7 import format_balanced
+            self._output.append(format_balanced(value))
+        else:
+            self._output.append(format_base_n(value))
 
     def print_decimal(self, value: int) -> None:
         self._output.append(str(value))
