@@ -27,7 +27,7 @@ classifiers = [
 septa = "septa.cli.main:main"
 
 [project.urls]
-Repository = "https://github.com/user/septastack"
+Repository = "https://github.com/Humanji7/septastack"
 
 [tool.setuptools.packages.find]
 include = ["septa*"]
