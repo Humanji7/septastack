@@ -1,0 +1,4 @@
+// hello.septa — Print a base-7 number
+fn main() -> void {
+    print(d:42);  // prints 60 (42 in base-7)
+}

@@ -1,0 +1,9 @@
+// if_else.septa — Conditional branching
+fn main() -> void {
+    let x: word = 5;
+    if x > 3 {
+        print(1);
+    } else {
+        print(0);
+    }
+}

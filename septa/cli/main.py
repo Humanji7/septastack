@@ -1,0 +1,128 @@
+"""CLI entry point for SeptaStack toolchain.
+
+Commands:
+  run      <file.septa>                 — compile and execute
+  compile  <file.septa> -o <file.json>  — compile to image (JSON)
+  version                               — show version
+"""
+
+import json
+import sys
+from pathlib import Path
+
+
+def _read_source(path: str) -> str:
+    """Read source file, fail fast on errors."""
+    p = Path(path)
+    if not p.exists():
+        print(f"Error: file not found: {path}", file=sys.stderr)
+        sys.exit(1)
+    if p.suffix != ".septa":
+        print(f"Error: expected .septa file, got: {path}", file=sys.stderr)
+        sys.exit(1)
+    return p.read_text(encoding="utf-8")
+
+
+def _compile(source: str, filename: str) -> dict:
+    """Full pipeline: source -> tokens -> AST -> IR -> asm -> image."""
+    from septa.asm.assembler import assemble
+    from septa.asm.image import build_image
+    from septa.asm.parser import parse_asm
+    from septa.codegen.addresses import allocate
+    from septa.codegen.codegen import generate
+    from septa.ir.lowering import lower
+    from septa.lexer.lexer import Lexer
+    from septa.parser.parser import Parser
+    from septa.semantic.analyzer import analyze
+
+    tokens = Lexer(source, filename).tokenize()
+    program = Parser(tokens).parse()
+    analyze(program)
+    ir = lower(program)
+    asm_text = generate(ir)
+    asm_lines = parse_asm(asm_text, filename.replace(".septa", ".sasm"))
+    asm_image = assemble(asm_lines)
+    addrs = allocate(ir)
+    return build_image(asm_image, ir, addrs)
+
+
+def _cmd_run(args: list[str]) -> None:
+    if not args:
+        print("Usage: septa run <file.septa>", file=sys.stderr)
+        sys.exit(1)
+    source = _read_source(args[0])
+    image = _compile(source, args[0])
+
+    from septa.vm.machine import Machine
+
+    vm = Machine(image)
+    output = vm.run()
+    for line in output:
+        print(line)
+
+
+def _cmd_compile(args: list[str]) -> None:
+    if not args:
+        print("Usage: septa compile <file.septa> [-o <file.json>]", file=sys.stderr)
+        sys.exit(1)
+    source = _read_source(args[0])
+    image = _compile(source, args[0])
+
+    out_path = None
+    if "-o" in args:
+        idx = args.index("-o")
+        if idx + 1 < len(args):
+            out_path = args[idx + 1]
+
+    if out_path:
+        Path(out_path).write_text(
+            json.dumps(image, indent=2) + "\n", encoding="utf-8"
+        )
+        print(f"Image written to {out_path}")
+    else:
+        print(json.dumps(image, indent=2))
+
+
+COMMANDS = {
+    "run": _cmd_run,
+    "compile": _cmd_compile,
+}
+
+USAGE = """\
+SeptaStack v0.1 — seven-state programming toolkit
+
+Usage: septa <command> [args]
+
+Commands:
+  run      <file.septa>                 Compile and execute
+  compile  <file.septa> [-o <file.json>] Compile to image (JSON)
+  version                               Show version
+"""
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print(USAGE)
+        sys.exit(0)
+
+    command = sys.argv[1]
+
+    if command in ("version", "--version", "-v"):
+        print("SeptaStack v0.1.0")
+        sys.exit(0)
+
+    if command in ("help", "--help", "-h"):
+        print(USAGE)
+        sys.exit(0)
+
+    handler = COMMANDS.get(command)
+    if handler is None:
+        print(f"Error: unknown command '{command}'", file=sys.stderr)
+        print("Run 'septa --help' for usage.", file=sys.stderr)
+        sys.exit(1)
+
+    handler(sys.argv[2:])
+
+
+if __name__ == "__main__":
+    main()

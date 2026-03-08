@@ -1,0 +1,10 @@
+// functions.septa — Function calls and return values
+fn add(a: word, b: word) -> word {
+    return a + b;
+}
+
+fn main() -> void {
+    let result: word = add(3, 4);
+    print(result);     // prints 10 (7 in base-7)
+    printd(result);    // prints 7
+}

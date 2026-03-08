@@ -1,0 +1,8 @@
+// add.septa — Add two numbers
+fn main() -> void {
+    let a: word = 3;
+    let b: word = 4;
+    let sum: word = a + b;
+    print(sum);     // prints 10 (7 in base-7)
+    printd(sum);    // prints 7
+}

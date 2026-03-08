@@ -1,0 +1,7 @@
+// memory.septa — Direct memory access via store[]
+fn main() -> void {
+    store[0] = d:100;
+    store[1] = d:200;
+    let sum: word = store[0] + store[1];
+    printd(sum);    // prints 300
+}

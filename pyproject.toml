@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "septastack"
+version = "0.1.0"
+description = "Experimental programming language and execution stack for a seven-state (septary) computer architecture"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+readme = "README.md"
+keywords = ["septary", "base-7", "virtual-machine", "compiler", "research"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Compilers",
+    "Topic :: Software Development :: Interpreters",
+]
+
+[project.scripts]
+septa = "septa.cli.main:main"
+
+[project.urls]
+Repository = "https://github.com/user/septastack"
+
+[tool.setuptools.packages.find]
+include = ["septa*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

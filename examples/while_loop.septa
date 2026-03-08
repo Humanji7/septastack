@@ -1,0 +1,8 @@
+// while_loop.septa — Count down from 6 to 0
+fn main() -> void {
+    let i: word = 6;
+    while i > 0 {
+        print(i);
+        i = i - 1;
+    }
+}
