@@ -1,0 +1,22 @@
+// bool_logic.septa — Comparisons and boolean branching
+fn main() -> void {
+    let a: word = d:10;
+    let b: word = d:20;
+    let count: word = d:0;
+    if a < b {
+        count = count + d:1;
+    }
+    if a > b {
+        count = count + d:1;
+    }
+    if a == a {
+        count = count + d:1;
+    }
+    if a != b {
+        count = count + d:1;
+    }
+    if b >= a {
+        count = count + d:1;
+    }
+    printd(count);  // 4 (a<b, a==a, a!=b, b>=a)
+}

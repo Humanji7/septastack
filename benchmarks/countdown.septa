@@ -1,0 +1,8 @@
+// countdown.septa — While loop counting down from d:1000
+fn main() -> void {
+    let i: word = d:1000;
+    while i > d:0 {
+        i = i - d:1;
+    }
+    printd(i);  // 0
+}

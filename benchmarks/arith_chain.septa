@@ -1,0 +1,13 @@
+// arith_chain.septa — Chained additions and subtractions
+fn main() -> void {
+    let a: word = d:10;
+    let b: word = d:20;
+    let c: word = d:30;
+    let d: word = d:40;
+    let e: word = d:50;
+    let r: word = a + b + c + d + e;
+    r = r - d:15;
+    r = r + d:5;
+    r = r - d:10;
+    printd(r);  // 130
+}

@@ -1,0 +1,22 @@
+// gcd.septa — GCD via iterative Euclidean algorithm (no recursion)
+fn gcd(a: word, b: word) -> word {
+    let x: word = a;
+    let y: word = b;
+    while y > d:0 {
+        let temp: word = y;
+        // x mod y: subtract y repeatedly until x < y
+        while x >= y {
+            x = x - y;
+        }
+        // now x = a mod b, swap: x=temp(old y), y=x(remainder)
+        let remainder: word = x;
+        x = temp;
+        y = remainder;
+    }
+    return x;
+}
+
+fn main() -> void {
+    let r: word = gcd(d:48, d:18);
+    printd(r);  // 6
+}

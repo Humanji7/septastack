@@ -1,0 +1,23 @@
+// nested_if.septa — 3-4 levels of if/else branching
+fn main() -> void {
+    let x: word = d:50;
+    let result: word = d:0;
+    if x > d:10 {
+        if x > d:25 {
+            if x > d:40 {
+                if x > d:75 {
+                    result = d:4;
+                } else {
+                    result = d:3;
+                }
+            } else {
+                result = d:2;
+            }
+        } else {
+            result = d:1;
+        }
+    } else {
+        result = d:0;
+    }
+    printd(result);  // 3
+}

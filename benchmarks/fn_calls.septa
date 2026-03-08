@@ -1,0 +1,20 @@
+// fn_calls.septa — Function calling function calling function
+fn add_one(x: word) -> word {
+    return x + d:1;
+}
+
+fn double(x: word) -> word {
+    let a: word = x + x;
+    return a;
+}
+
+fn compute(x: word) -> word {
+    let a: word = add_one(x);
+    let b: word = double(a);
+    return b;
+}
+
+fn main() -> void {
+    let r: word = compute(d:5);
+    printd(r);  // (5+1)*2 = 12
+}

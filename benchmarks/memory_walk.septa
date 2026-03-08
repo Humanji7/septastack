@@ -1,0 +1,11 @@
+// memory_walk.septa — Sequential write then read of store[0..3]
+fn main() -> void {
+    store[d:0] = d:10;
+    store[d:1] = d:20;
+    store[d:2] = d:30;
+    store[d:3] = d:40;
+    let a: word = store[d:0] + store[d:1];
+    let b: word = store[d:2] + store[d:3];
+    let sum: word = a + b;
+    printd(sum);  // 100
+}

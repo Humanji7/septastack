@@ -3,6 +3,7 @@
 Commands:
   run      <file.septa>                 — compile and execute
   compile  <file.septa> -o <file.json>  — compile to image (JSON)
+  bench    [--bases=2,3,7,10] [files]   — run benchmarks across bases
   version                               — show version
 
 Options:
@@ -111,9 +112,48 @@ def _cmd_compile(args: list[str]) -> None:
         print(json.dumps(image, indent=2))
 
 
+def _cmd_bench(args: list[str]) -> None:
+    """Run benchmarks across multiple bases and print comparison table."""
+    from septa.bench.runner import format_table, run_benchmarks
+
+    # Parse --bases=2,3,7,10
+    bases = [2, 3, 7, 10]
+    programs = []
+    for arg in args:
+        if arg.startswith("--bases="):
+            bases = [int(b) for b in arg.split("=", 1)[1].split(",")]
+        else:
+            programs.append(Path(arg))
+
+    # Default: all .septa files in benchmarks/
+    if not programs:
+        bench_dir = Path(__file__).parent.parent.parent / "benchmarks"
+        programs = sorted(bench_dir.glob("*.septa"))
+        if not programs:
+            print("Error: no benchmark files found", file=sys.stderr)
+            sys.exit(1)
+
+    results = run_benchmarks(programs, bases)
+
+    # Verify output consistency across bases
+    by_prog: dict[str, dict[int, list[str]]] = {}
+    for r in results:
+        by_prog.setdefault(r["program"], {})[r["base"]] = r["output"]
+    for prog, outputs in by_prog.items():
+        vals = list(outputs.values())
+        if any(v != vals[0] for v in vals[1:]):
+            print(
+                f"Warning: {prog} output differs across bases: {outputs}",
+                file=sys.stderr,
+            )
+
+    print(format_table(results, bases))
+
+
 COMMANDS = {
     "run": _cmd_run,
     "compile": _cmd_compile,
+    "bench": _cmd_bench,
 }
 
 USAGE = """\
@@ -124,6 +164,7 @@ Usage: septa <command> [options] [args]
 Commands:
   run      <file.septa>                 Compile and execute
   compile  <file.septa> [-o <file.json>] Compile to image (JSON)
+  bench    [--bases=2,3,7,10] [files]   Run benchmarks across bases
   version                               Show version
 
 Options:

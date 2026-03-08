@@ -1,0 +1,10 @@
+// accumulator.septa — Sum d:1 to d:50 in a loop
+fn main() -> void {
+    let sum: word = d:0;
+    let i: word = d:1;
+    while i <= d:50 {
+        sum = sum + i;
+        i = i + d:1;
+    }
+    printd(sum);  // 1275
+}
