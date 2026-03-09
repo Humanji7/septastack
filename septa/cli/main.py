@@ -38,6 +38,9 @@ def _parse_global_opts(argv: list[str]) -> tuple[list[str], int, bool]:
                 balanced = True
             elif repr_val == "unsigned":
                 balanced = False
+            elif "," in repr_val:
+                # Comma-separated: pass through for bench command
+                remaining.append(arg)
             else:
                 print(f"Error: invalid repr: {repr_val} (use unsigned or balanced)", file=sys.stderr)
                 sys.exit(1)
