@@ -228,3 +228,64 @@ def test_format_table():
     assert "base=2" in table
     assert "base=7" in table
     assert "instruction" in table.lower() or "instructions" in table.lower()
+
+
+# --- Test: repr dimension ---
+
+
+def test_runner_with_repr():
+    """Runner handles repr parameter."""
+    from septa.bench.runner import run_benchmarks
+
+    results = run_benchmarks(
+        programs=[BENCHMARKS_DIR / "arith_chain.septa"],
+        bases=[7],
+        reprs=["unsigned", "balanced"],
+    )
+    assert len(results) == 2
+    reprs_seen = {r["repr"] for r in results}
+    assert reprs_seen == {"unsigned", "balanced"}
+    # printd output should be identical
+    outputs = {r["repr"]: r["output"] for r in results}
+    assert outputs["unsigned"] == outputs["balanced"]
+
+
+def test_runner_balanced_only_odd():
+    """Runner skips balanced for even bases."""
+    from septa.bench.runner import run_benchmarks
+
+    results = run_benchmarks(
+        programs=[BENCHMARKS_DIR / "arith_chain.septa"],
+        bases=[2, 3],
+        reprs=["unsigned", "balanced"],
+    )
+    # base=2 unsigned + base=3 unsigned + base=3 balanced = 3
+    assert len(results) == 3
+
+
+def test_bench_cross_repr_printd_identical():
+    """Same program produces identical printd output in unsigned vs balanced."""
+    from septa.bench.runner import run_benchmarks
+
+    results = run_benchmarks(
+        programs=[BENCHMARKS_DIR / "accumulator.septa"],
+        bases=[7],
+        reprs=["unsigned", "balanced"],
+    )
+    outputs = {r["repr"]: r["output"] for r in results}
+    assert outputs["unsigned"] == outputs["balanced"]
+
+
+def test_bench_instruction_count_identical_across_repr():
+    """Instruction count identical between unsigned and balanced (same codegen)."""
+    from septa.bench.runner import run_benchmarks
+
+    results = run_benchmarks(
+        programs=[BENCHMARKS_DIR / "arith_chain.septa"],
+        bases=[7],
+        reprs=["unsigned", "balanced"],
+    )
+    by_repr = {r["repr"]: r for r in results}
+    assert by_repr["unsigned"]["instruction_count"] == by_repr["balanced"]["instruction_count"]
+    assert by_repr["unsigned"]["steps_executed"] == by_repr["balanced"]["steps_executed"]
+    assert by_repr["unsigned"]["memory_used"] == by_repr["balanced"]["memory_used"]
