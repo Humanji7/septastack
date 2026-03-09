@@ -112,11 +112,11 @@ def format_base_n(n: int) -> str:
 
 
 def validate_word(n: int) -> int:
-    """Ensure value fits in unsigned word range. Returns value if valid."""
+    """Ensure value fits in word range (unsigned or balanced). Returns value if valid."""
     cfg = get_config()
-    if n < 0 or n > cfg.max_word:
+    if n < cfg.word_min or n > cfg.word_max:
         raise ValueError(
-            f"value {n} out of word range [0, {cfg.max_word}]"
+            f"value {n} out of word range [{cfg.word_min}, {cfg.word_max}]"
         )
     return n
 

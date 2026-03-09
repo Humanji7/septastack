@@ -291,3 +291,33 @@ class TestBalancedParse:
     def test_roundtrip(self):
         for val in [0, 1, -1, 3, -3, 5, -5, 7, -7, 24, -24]:
             assert parse_balanced(format_balanced(val)) == val
+
+
+# ---- Task 6: Balanced validation ----
+
+
+class TestBalancedValidation:
+    """Tests for validate_word() with balanced representation."""
+
+    def setup_method(self):
+        set_config(RadixConfig(base=7, word_width=2, balanced=True))
+
+    def teardown_method(self):
+        reset_config()
+
+    def test_validate_word_positive(self):
+        assert validate_word(24) == 24
+
+    def test_validate_word_negative(self):
+        assert validate_word(-24) == -24
+
+    def test_validate_word_zero(self):
+        assert validate_word(0) == 0
+
+    def test_validate_word_overflow(self):
+        with pytest.raises(ValueError):
+            validate_word(25)
+
+    def test_validate_word_underflow(self):
+        with pytest.raises(ValueError):
+            validate_word(-25)

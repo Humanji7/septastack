@@ -1,10 +1,10 @@
 """Benchmark runner for cross-radix comparison.
 
-Compiles and runs SeptaLang programs across multiple bases,
+Compiles and runs SeptaLang programs across multiple bases and representations,
 collecting metrics for comparative analysis.
 
 Public API:
-  run_benchmarks(programs, bases) -> list[dict]
+  run_benchmarks(programs, bases, reprs) -> list[dict]
   format_table(results, bases) -> str
 """
 
@@ -50,27 +50,41 @@ def _compile_and_measure(source: str, filename: str) -> dict:
 def run_benchmarks(
     programs: list[Path],
     bases: list[int] | None = None,
+    reprs: list[str] | None = None,
 ) -> list[dict]:
-    """Run benchmark programs across specified bases.
+    """Run benchmark programs across specified bases and representations.
 
-    Returns a list of result dicts, one per (program, base) pair:
-      {program, base, instruction_count, steps_executed, memory_used, output}
+    Args:
+        programs: list of .septa file paths to benchmark
+        bases: list of radix bases (default: [2, 3, 7, 10])
+        reprs: list of representations, "unsigned" and/or "balanced" (default: ["unsigned"])
+
+    Returns a list of result dicts, one per (program, base, repr) combo:
+      {program, base, repr, instruction_count, steps_executed, memory_used, output}
     """
     if bases is None:
         bases = [2, 3, 7, 10]
+    if reprs is None:
+        reprs = ["unsigned"]
 
     results: list[dict] = []
     for prog_path in programs:
         source = prog_path.read_text(encoding="utf-8")
         name = prog_path.stem
         for base in bases:
-            set_config(RadixConfig(base=base, word_width=12))
-            metrics = _compile_and_measure(source, prog_path.name)
-            results.append({
-                "program": name,
-                "base": base,
-                **metrics,
-            })
+            for repr_mode in reprs:
+                balanced = repr_mode == "balanced"
+                # Balanced requires odd base — skip incompatible combos
+                if balanced and base % 2 == 0:
+                    continue
+                set_config(RadixConfig(base=base, word_width=12, balanced=balanced))
+                metrics = _compile_and_measure(source, prog_path.name)
+                results.append({
+                    "program": name,
+                    "base": base,
+                    "repr": repr_mode,
+                    **metrics,
+                })
     reset_config()
     return results
 

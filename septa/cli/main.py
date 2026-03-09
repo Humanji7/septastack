@@ -3,11 +3,13 @@
 Commands:
   run      <file.septa>                 — compile and execute
   compile  <file.septa> -o <file.json>  — compile to image (JSON)
-  bench    [--bases=2,3,7,10] [files]   — run benchmarks across bases
+  bench    [--bases=2,3,7,10] [--repr=unsigned,balanced] [files]
+                                        — run benchmarks across bases/reprs
   version                               — show version
 
 Options:
-  --base=N   Set radix (default: 7). Supported: 2-10.
+  --base=N           Set radix (default: 7). Supported: 2-10.
+  --repr=MODE        Set representation (default: unsigned). Modes: unsigned, balanced.
 """
 
 import json
@@ -15,9 +17,10 @@ import sys
 from pathlib import Path
 
 
-def _parse_global_opts(argv: list[str]) -> tuple[list[str], int]:
-    """Extract --base=N from argv. Returns (remaining_args, base)."""
+def _parse_global_opts(argv: list[str]) -> tuple[list[str], int, bool]:
+    """Extract --base=N and --repr=balanced from argv. Returns (remaining_args, base, balanced)."""
     base = 7
+    balanced = False
     remaining = []
     for arg in argv:
         if arg.startswith("--base="):
@@ -29,15 +32,24 @@ def _parse_global_opts(argv: list[str]) -> tuple[list[str], int]:
             if base < 2 or base > 10:
                 print(f"Error: base must be 2-10, got {base}", file=sys.stderr)
                 sys.exit(1)
+        elif arg.startswith("--repr="):
+            repr_val = arg.split("=", 1)[1]
+            if repr_val == "balanced":
+                balanced = True
+            elif repr_val == "unsigned":
+                balanced = False
+            else:
+                print(f"Error: invalid repr: {repr_val} (use unsigned or balanced)", file=sys.stderr)
+                sys.exit(1)
         else:
             remaining.append(arg)
-    return remaining, base
+    return remaining, base, balanced
 
 
-def _apply_config(base: int) -> None:
+def _apply_config(base: int, balanced: bool = False) -> None:
     """Set active radix configuration."""
     from septa.common.config import RadixConfig, set_config
-    set_config(RadixConfig(base=base, word_width=12))
+    set_config(RadixConfig(base=base, word_width=12, balanced=balanced))
 
 
 def _read_source(path: str) -> str:
@@ -113,15 +125,22 @@ def _cmd_compile(args: list[str]) -> None:
 
 
 def _cmd_bench(args: list[str]) -> None:
-    """Run benchmarks across multiple bases and print comparison table."""
+    """Run benchmarks across multiple bases/reprs and print comparison table."""
     from septa.bench.runner import format_table, run_benchmarks
 
-    # Parse --bases=2,3,7,10
+    # Parse --bases=2,3,7,10 and --repr=unsigned,balanced
     bases = [2, 3, 7, 10]
+    reprs = ["unsigned"]
     programs = []
     for arg in args:
         if arg.startswith("--bases="):
             bases = [int(b) for b in arg.split("=", 1)[1].split(",")]
+        elif arg.startswith("--repr="):
+            reprs = arg.split("=", 1)[1].split(",")
+            for r in reprs:
+                if r not in ("unsigned", "balanced"):
+                    print(f"Error: invalid repr: {r} (use unsigned or balanced)", file=sys.stderr)
+                    sys.exit(1)
         else:
             programs.append(Path(arg))
 
@@ -133,7 +152,7 @@ def _cmd_bench(args: list[str]) -> None:
             print("Error: no benchmark files found", file=sys.stderr)
             sys.exit(1)
 
-    results = run_benchmarks(programs, bases)
+    results = run_benchmarks(programs, bases, reprs=reprs)
 
     # Verify output consistency across bases
     by_prog: dict[str, dict[int, list[str]]] = {}
@@ -164,16 +183,18 @@ Usage: septa <command> [options] [args]
 Commands:
   run      <file.septa>                 Compile and execute
   compile  <file.septa> [-o <file.json>] Compile to image (JSON)
-  bench    [--bases=2,3,7,10] [files]   Run benchmarks across bases
+  bench    [--bases=2,3,7,10] [--repr=unsigned,balanced] [files]
+                                        Run benchmarks across bases/reprs
   version                               Show version
 
 Options:
-  --base=N   Set radix (default: 7). Supported: 2-10.
+  --base=N           Set radix (default: 7). Supported: 2-10.
+  --repr=MODE        Set representation (default: unsigned). Modes: unsigned, balanced.
 
 Examples:
-  septa run examples/add.septa              Base-7 (default)
-  septa --base=3 run examples/add.septa     Base-3 (ternary)
-  septa --base=2 run examples/add.septa     Base-2 (binary)
+  septa run examples/add.septa                        Base-7 unsigned (default)
+  septa --base=3 run examples/add.septa               Base-3 (ternary)
+  septa --base=7 --repr=balanced run examples/add.septa  Base-7 balanced
 """
 
 
@@ -182,8 +203,8 @@ def main() -> None:
         print(USAGE)
         sys.exit(0)
 
-    args, base = _parse_global_opts(sys.argv[1:])
-    _apply_config(base)
+    args, base, balanced = _parse_global_opts(sys.argv[1:])
+    _apply_config(base, balanced)
 
     if not args:
         print(USAGE)
